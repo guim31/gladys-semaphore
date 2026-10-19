@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-19
+
 ### Added
 
 - One device per allowed Semaphore UI template: status of the last task,
@@ -26,4 +28,5 @@ the notes of the version's GitHub Release.
 - "Test the connection" lists every template the token sees, with its number.
 - Texts and documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-semaphore/commits/main
+[Unreleased]: https://github.com/guim31/gladys-semaphore/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-semaphore/releases/tag/v1.0.0
