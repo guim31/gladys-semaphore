@@ -30,6 +30,26 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- the **Semaphore API token**, stored by Gladys in the integration
+  configuration (never written to `/data`, never logged); it is only sent, in
+  the `Authorization` header, to the configured address, and redirects are not
+  followed so it never reaches another host. It acts with the rights of its
+  user;
+- **running templates**: only the templates whose numbers are in the
+  allow-list of the configuration can be run or stopped, checked again at
+  every command (scene action or widget button); the list is empty by default.
+  Widget buttons ask for a confirmation; the devices carry no command;
+- the **extra variables** typed in scenes: sent to Semaphore with the task,
+  never logged nor stored;
+- the **output of the tasks** (Ansible logs, which may hold secrets) is never
+  read; only the status, the dates and the duration of a task are;
+- `/data/semaphore-state.json`: the last task seen for each allowed template
+  (number, status, dates) and the address of Semaphore;
+- network: HTTP(S) requests to the Semaphore address, nothing else; no port is
+  opened.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and Semaphore UI itself.

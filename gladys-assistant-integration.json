@@ -1,177 +1,604 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Semaphore UI",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Run your Semaphore UI templates (Ansible…) from Gladys scenes and follow their result.",
+    "fr": "Lancez vos modèles Semaphore UI (Ansible…) depuis vos scènes Gladys et suivez leur résultat.",
+    "de": "Starte deine Semaphore-UI-Vorlagen (Ansible…) aus Gladys-Szenen und verfolge ihr Ergebnis.",
+    "es": "Lance sus plantillas de Semaphore UI (Ansible…) desde escenas de Gladys y siga su resultado."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-semaphore:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-semaphore/main/cover.png",
+  "categories": ["services"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Semaphore",
+        "fr": "Votre Semaphore",
+        "de": "Dein Semaphore",
+        "es": "Su Semaphore"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "In Semaphore, open the user menu → API tokens and create a token. Paste it below with the address of Semaphore, click Test the connection to list the templates with their number, then type the numbers of the templates Gladys may run. Nothing can be run until then.",
+        "fr": "Dans Semaphore, ouvrez le menu utilisateur → API tokens et créez un jeton. Collez-le ci-dessous avec l'adresse de Semaphore, cliquez sur Tester la connexion pour lister les modèles avec leur numéro, puis saisissez les numéros des modèles que Gladys peut lancer. Rien n'est lançable avant.",
+        "de": "Öffne in Semaphore das Benutzermenü → API tokens und erstelle ein Token. Füge es unten mit der Adresse von Semaphore ein, klicke auf „Verbindung testen“, um die Vorlagen mit Nummer aufzulisten, und trage die Nummern der Vorlagen ein, die Gladys starten darf. Vorher lässt sich nichts starten.",
+        "es": "En Semaphore, abra el menú de usuario → API tokens y cree un token. Péguelo abajo con la dirección de Semaphore, pulse Probar la conexión para listar las plantillas con su número y después escriba los números de las plantillas que Gladys puede lanzar. Antes no se puede lanzar nada."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-semaphore/blob/main/docs/en.md",
+          "label": {
+            "en": "Setup guide",
+            "fr": "Guide d'installation",
+            "de": "Einrichtungsanleitung",
+            "es": "Guía de instalación"
+          }
+        },
+        {
+          "url": "https://docs.semaphoreui.com/",
+          "label": {
+            "en": "Semaphore UI documentation",
+            "fr": "Documentation de Semaphore UI",
+            "de": "Semaphore-UI-Dokumentation",
+            "es": "Documentación de Semaphore UI"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Semaphore address",
+        "fr": "Adresse de Semaphore",
+        "de": "Semaphore-Adresse",
+        "es": "Dirección de Semaphore"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "The address you open Semaphore with. Port 3000 is added to a bare IP address.",
+        "fr": "L'adresse avec laquelle vous ouvrez Semaphore. Le port 3000 est ajouté à une adresse IP seule.",
+        "de": "Die Adresse, mit der du Semaphore öffnest. Zu einer reinen IP-Adresse wird Port 3000 ergänzt.",
+        "es": "La dirección con la que abre Semaphore. A una dirección IP sola se le añade el puerto 3000."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.2:3000",
+        "fr": "ex. http://192.168.1.2:3000",
+        "de": "z. B. http://192.168.1.2:3000",
+        "es": "p. ej. http://192.168.1.2:3000"
+      },
+      "required": false
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_token",
+      "type": "secret",
+      "label": {
+        "en": "API token",
+        "fr": "Jeton d'API",
+        "de": "API-Token",
+        "es": "Token de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Created in the user menu → API tokens. It acts with the rights of its user.",
+        "fr": "Créé dans le menu utilisateur → API tokens. Il agit avec les droits de son utilisateur.",
+        "de": "Erstellt im Benutzermenü → API tokens. Es handelt mit den Rechten seines Benutzers.",
+        "es": "Creado en el menú de usuario → API tokens. Actúa con los permisos de su usuario."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "templates",
+      "type": "string",
+      "label": {
+        "en": "Allowed templates (numbers)",
+        "fr": "Modèles autorisés (numéros)",
+        "de": "Erlaubte Vorlagen (Nummern)",
+        "es": "Plantillas permitidas (números)"
+      },
+      "description": {
+        "en": "Numbers of the templates Gladys may follow and run, separated by commas. Empty: none. Test the connection lists them.",
+        "fr": "Numéros des modèles que Gladys peut suivre et lancer, séparés par des virgules. Vide : aucun. Tester la connexion les liste.",
+        "de": "Nummern der Vorlagen, die Gladys verfolgen und starten darf, durch Kommas getrennt. Leer: keine. „Verbindung testen“ listet sie auf.",
+        "es": "Números de las plantillas que Gladys puede seguir y lanzar, separados por comas. Vacío: ninguna. Probar la conexión las lista."
+      },
+      "placeholder": {
+        "en": "e.g. 3, 7",
+        "fr": "ex. 3, 7",
+        "de": "z. B. 3, 7",
+        "es": "p. ej. 3, 7"
+      },
+      "required": false
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "poll_interval",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle d'actualisation",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Semaphore is read; every 5 seconds while a task runs.",
+        "fr": "La fréquence de lecture de Semaphore ; toutes les 5 secondes pendant qu'une tâche tourne.",
+        "de": "Wie oft Semaphore gelesen wird; alle 5 Sekunden, solange eine Aufgabe läuft.",
+        "es": "Con qué frecuencia se lee Semaphore; cada 5 segundos mientras una tarea está en curso."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "60",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Language of the feature names (set when a device is added), of the statuses and of the scene results.",
+        "fr": "Langue des noms des fonctionnalités (fixés à l'ajout d'un appareil), des statuts et des résultats de scène.",
+        "de": "Sprache der Funktionsnamen (beim Hinzufügen eines Geräts festgelegt), der Status und der Szenenergebnisse.",
+        "es": "Idioma de los nombres de las funciones (fijados al añadir un dispositivo), de los estados y de los resultados de escena."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "task_succeeded",
+      "label": {
+        "en": "A Semaphore task succeeds",
+        "fr": "Une tâche Semaphore réussit",
+        "de": "Eine Semaphore-Aufgabe ist erfolgreich",
+        "es": "Una tarea de Semaphore termina bien"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A task of an allowed template ends successfully, with its duration.",
+        "fr": "Une tâche d'un modèle autorisé se termine avec succès, avec sa durée.",
+        "de": "Eine Aufgabe einer erlaubten Vorlage endet erfolgreich, mit ihrer Dauer.",
+        "es": "Una tarea de una plantilla permitida termina correctamente, con su duración."
       },
       "fields": [
         {
           "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "source": "devices",
+          "label": {
+            "en": "Templates (empty: any)",
+            "fr": "Modèles (vide : tous)",
+            "de": "Vorlagen (leer: alle)",
+            "es": "Plantillas (vacío: todas)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "template",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Template name",
+            "fr": "Nom du modèle",
+            "de": "Name der Vorlage",
+            "es": "Nombre de la plantilla"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "duration",
+          "type": "number",
+          "label": {
+            "en": "Duration (s)",
+            "fr": "Durée (s)",
+            "de": "Dauer (s)",
+            "es": "Duración (s)"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        }
+      ]
+    },
+    {
+      "key": "task_failed",
+      "label": {
+        "en": "A Semaphore task fails",
+        "fr": "Une tâche Semaphore échoue",
+        "de": "Eine Semaphore-Aufgabe schlägt fehl",
+        "es": "Una tarea de Semaphore falla"
+      },
+      "description": {
+        "en": "A task of an allowed template ends in error, with its duration (never the logs: they may hold secrets).",
+        "fr": "Une tâche d'un modèle autorisé se termine en erreur, avec sa durée (jamais les journaux : ils peuvent contenir des secrets).",
+        "de": "Eine Aufgabe einer erlaubten Vorlage endet mit einem Fehler, mit ihrer Dauer (nie die Protokolle, die Geheimnisse enthalten können).",
+        "es": "Una tarea de una plantilla permitida termina en error, con su duración (nunca los registros: pueden contener secretos)."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Templates (empty: any)",
+            "fr": "Modèles (vide : tous)",
+            "de": "Vorlagen (leer: alle)",
+            "es": "Plantillas (vacío: todas)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "template",
+          "type": "string",
+          "label": {
+            "en": "Template name",
+            "fr": "Nom du modèle",
+            "de": "Name der Vorlage",
+            "es": "Nombre de la plantilla"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "duration",
+          "type": "number",
+          "label": {
+            "en": "Duration (s)",
+            "fr": "Durée (s)",
+            "de": "Dauer (s)",
+            "es": "Duración (s)"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "run_template",
+      "label": {
+        "en": "Run a Semaphore template",
+        "fr": "Lancer un modèle Semaphore",
+        "de": "Semaphore-Vorlage starten",
+        "es": "Lanzar una plantilla de Semaphore"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Runs an allowed template, optionally with extra variables, and can wait for its end (90 s at most).",
+        "fr": "Lance un modèle autorisé, avec des variables supplémentaires si besoin, et peut attendre sa fin (90 s au plus).",
+        "de": "Startet eine erlaubte Vorlage, bei Bedarf mit zusätzlichen Variablen, und kann auf ihr Ende warten (höchstens 90 s).",
+        "es": "Lanza una plantilla permitida, con variables adicionales si hace falta, y puede esperar a que termine (90 s como máximo)."
+      },
+      "timeout_seconds": 120,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Template",
+            "fr": "Modèle",
+            "de": "Vorlage",
+            "es": "Plantilla"
+          },
+          "required": true
+        },
+        {
+          "key": "variables",
+          "type": "string",
+          "label": {
+            "en": "Extra variables (JSON)",
+            "fr": "Variables supplémentaires (JSON)",
+            "de": "Zusätzliche Variablen (JSON)",
+            "es": "Variables adicionales (JSON)"
+          },
+          "description": {
+            "en": "Optional. A JSON object passed to the task as extra variables. Scene values can be inserted.",
+            "fr": "Facultatif. Un objet JSON transmis à la tâche comme variables supplémentaires. Les valeurs de la scène peuvent y être insérées.",
+            "de": "Optional. Ein JSON-Objekt, das der Aufgabe als zusätzliche Variablen übergeben wird. Werte der Szene können eingefügt werden.",
+            "es": "Opcional. Un objeto JSON pasado a la tarea como variables adicionales. Se pueden insertar valores de la escena."
+          },
+          "placeholder": {
+            "en": "e.g. {\"host\": \"web1\"}",
+            "fr": "ex. {\"host\": \"web1\"}",
+            "de": "z. B. {\"host\": \"web1\"}",
+            "es": "p. ej. {\"host\": \"web1\"}"
+          },
+          "required": false
+        },
+        {
+          "key": "wait",
+          "type": "boolean",
+          "label": {
+            "en": "Wait for the end (90 s at most)",
+            "fr": "Attendre la fin (90 s au plus)",
+            "de": "Auf das Ende warten (höchstens 90 s)",
+            "es": "Esperar al final (90 s como máximo)"
+          },
+          "required": false,
+          "default": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "finished",
+          "type": "boolean",
+          "label": {
+            "en": "Finished",
+            "fr": "Terminée",
+            "de": "Beendet",
+            "es": "Terminada"
+          }
+        },
+        {
+          "key": "success",
+          "type": "boolean",
+          "label": {
+            "en": "Succeeded",
+            "fr": "Réussie",
+            "de": "Erfolgreich",
+            "es": "Correcta"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "duration",
+          "type": "number",
+          "label": {
+            "en": "Duration (s)",
+            "fr": "Durée (s)",
+            "de": "Dauer (s)",
+            "es": "Duración (s)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "stop_task",
+      "label": {
+        "en": "Stop a Semaphore task",
+        "fr": "Arrêter une tâche Semaphore",
+        "de": "Semaphore-Aufgabe stoppen",
+        "es": "Detener una tarea de Semaphore"
+      },
+      "description": {
+        "en": "Stops the running task of an allowed template, if there is one.",
+        "fr": "Arrête la tâche en cours d'un modèle autorisé, s'il y en a une.",
+        "de": "Stoppt die laufende Aufgabe einer erlaubten Vorlage, falls es eine gibt.",
+        "es": "Detiene la tarea en curso de una plantilla permitida, si la hay."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Template",
+            "fr": "Modèle",
+            "de": "Vorlage",
+            "es": "Plantilla"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "stopped",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "A task was stopped",
+            "fr": "Une tâche a été arrêtée",
+            "de": "Eine Aufgabe wurde gestoppt",
+            "es": "Se detuvo una tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "semaphore",
+      "label": {
+        "en": "Semaphore templates",
+        "fr": "Modèles Semaphore",
+        "de": "Semaphore-Vorlagen",
+        "es": "Plantillas de Semaphore"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Last status of the allowed templates, with a Run button (confirmed) for each.",
+        "fr": "Dernier statut des modèles autorisés, avec un bouton Lancer (confirmé) pour chacun.",
+        "de": "Letzter Status der erlaubten Vorlagen, mit je einer Schaltfläche Starten (mit Bestätigung).",
+        "es": "Último estado de las plantillas permitidas, con un botón Lanzar (confirmado) para cada una."
+      },
+      "icon": "play-circle",
+      "action_timeout_seconds": 60,
+      "settings": [
+        {
+          "key": "templates",
+          "type": "multi_select",
+          "source": "devices",
+          "label": {
+            "en": "Templates (empty: all allowed)",
+            "fr": "Modèles (vide : tous les autorisés)",
+            "de": "Vorlagen (leer: alle erlaubten)",
+            "es": "Plantillas (vacío: todas las permitidas)"
+          },
+          "description": {
+            "en": "Empty: every allowed template. Only the devices added to Gladys can be chosen.",
+            "fr": "Vide : tous les modèles autorisés. Seuls les appareils ajoutés à Gladys peuvent être choisis.",
+            "de": "Leer: alle erlaubten Vorlagen. Nur die zu Gladys hinzugefügten Geräte sind wählbar.",
+            "es": "Vacío: todas las plantillas permitidas. Solo se pueden elegir los dispositivos añadidos a Gladys."
+          },
+          "required": false
+        }
+      ]
     }
   ]
 }

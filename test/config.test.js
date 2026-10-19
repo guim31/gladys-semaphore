@@ -1,33 +1,35 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { normalizeConfig, parseServerUrl, parseTemplateIds } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('the address: bare host, copied URL, sub-path, nothing unsafe', () => {
+  assert.equal(parseServerUrl('192.0.2.10'), 'http://192.0.2.10:3000');
+  assert.equal(parseServerUrl('192.0.2.10:8080'), 'http://192.0.2.10:8080');
+  assert.equal(
+    parseServerUrl('https://semaphore.example.com/project/1/templates/3'),
+    'https://semaphore.example.com',
+  );
+  assert.equal(parseServerUrl('https://example.com/semaphore/'), 'https://example.com/semaphore');
+  assert.equal(parseServerUrl('http://example.com/semaphore/api/'), 'http://example.com/semaphore');
+  assert.equal(parseServerUrl('http://user:pass@example.com'), null);
+  assert.equal(parseServerUrl('ftp://example.com'), null);
+  assert.equal(parseServerUrl(''), null);
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('the allow-list: numbers only, anything else reported', () => {
+  assert.deepEqual(parseTemplateIds('3, 7;12 #4 3'), { ids: [3, 7, 12, 4], invalid: [] });
+  assert.deepEqual(parseTemplateIds('3, web, 0, -1'), { ids: [3], invalid: ['web', '0', '-1'] });
+  assert.deepEqual(parseTemplateIds(''), { ids: [], invalid: [] });
+  assert.deepEqual(parseTemplateIds(undefined), { ids: [], invalid: [] });
+  assert.deepEqual(parseTemplateIds(5), { ids: [5], invalid: [] });
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
-});
-
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('defaults: French, one minute, nothing allowed', () => {
+  const config = normalizeConfig({});
+  assert.equal(config.language, 'fr');
+  assert.equal(config.pollIntervalMs, 60_000);
+  assert.deepEqual(config.allowed, []);
+  assert.equal(config.url, null);
+  assert.equal(normalizeConfig({ api_token: ' abc \n' }).token, 'abc');
+  assert.equal(normalizeConfig({ poll_interval: '7' }).pollIntervalMs, 60_000);
 });
