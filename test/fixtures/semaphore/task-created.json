@@ -1,0 +1,12 @@
+{
+  "id": 5,
+  "template_id": 1,
+  "project_id": 1,
+  "status": "waiting",
+  "playbook": "",
+  "environment": "{\"delay\":20}",
+  "secret": "{}",
+  "user_id": 1,
+  "created": "2026-10-19T19:51:50.90997749Z",
+  "limit": ""
+}

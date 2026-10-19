@@ -1,0 +1,13 @@
+{
+  "id": 1,
+  "template_id": 1,
+  "project_id": 1,
+  "status": "success",
+  "playbook": "",
+  "environment": "{\"who\":\"gladys\",\"delay\":2}",
+  "user_id": 1,
+  "created": "2026-10-19T19:49:08.271898261Z",
+  "start": "2026-10-19T19:49:18.495004541Z",
+  "end": "2026-10-19T19:49:53.937892116Z",
+  "limit": ""
+}

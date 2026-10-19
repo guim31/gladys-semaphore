@@ -1,0 +1,12 @@
+{
+  "id": 3,
+  "template_id": 3,
+  "project_id": 1,
+  "status": "stopped",
+  "playbook": "",
+  "user_id": 1,
+  "created": "2026-10-19T19:50:15.336782995Z",
+  "start": "2026-10-19T19:50:16.769855915Z",
+  "end": "2026-10-19T19:50:31.002200392Z",
+  "limit": ""
+}

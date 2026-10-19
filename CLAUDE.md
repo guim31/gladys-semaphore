@@ -16,8 +16,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "fails"   # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states, task ends -> scene events, commands (run, stop)
+src/devices.js                    one device per allowed template: features, names, values
+src/semaphore/client.js           REST API (fetch), errors by kind, normalization (no task output)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/widgets.js                    dashboard widget `semaphore` (manifest `widgets`)
+src/texts.js                      connection, error, status, report and action texts (4 languages), dates
+src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization, allow-list
+src/store.js, src/problems.js     /data/semaphore-state.json; one log line per repeated failure
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeSemaphore.js (checked against test/fixtures/semaphore)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +74,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, scene outputs, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +203,43 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Semaphore UI (propre à ce dépôt)
+
+- **API REST** `/api`, jeton d'utilisateur en `Authorization: Bearer` (créé dans Semaphore ou par
+  `POST /api/user/tokens` avec la session). Lues : `GET /api/projects`, `GET
+/api/project/<p>/templates` (chaque modèle porte `last_task` **dès qu'il a tourné**, absent
+  avant). Commandes : `POST /api/project/<p>/tasks` `{template_id, environment}` (201, tâche
+  `waiting` ; `environment` = variables supplémentaires **en chaîne JSON**), `POST
+/api/project/<p>/tasks/<t>/stop` (204, **même sur une tâche déjà finie**), `GET
+/api/project/<p>/tasks/<t>`.
+- **Pièges vérifiés sur Semaphore 2.19.17** : `SEMAPHORE_DB_DIALECT=bolt` n'existe plus
+  (« Unknown database dialect »), utiliser `sqlite` ; jeton faux : 401 sans corps ; projet ou modèle
+  inconnu : 404 ; **tâche inconnue : 400 sans corps** (traité en « introuvable ») ; un dépôt de
+  playbooks peut être un **chemin local** (`git_url: "/playbooks"`), pratique pour les tests. Les
+  identifiants de modèles sont globaux (SQL). Statuts : `waiting`, `starting`,
+  `waiting_confirmation`, `confirmed`, `running`, `stopping` puis `success`, `error`, `stopped`,
+  `rejected`. Les réponses de tâche portent `environment` (variables, peut contenir des secrets) :
+  **jamais conservé** (`normalizeTask`), et la sortie des tâches n'est jamais lue.
+- **Garde-fou** : liste blanche de numéros de modèles (`templates`, chaîne « 3, 7 »), vide par
+  défaut ; un champ de config ne peut pas proposer une liste dynamique de modèles (`source` ne
+  connaît que `devices` et `houses`), d'où la saisie des numéros et « Tester la connexion » qui les
+  liste. **Chaque commande revérifie la liste** (`hub.templateOf`) : un appareil ou un contenu de
+  widget d'avant un retrait ne lance plus rien. Aucune commande sur les appareils (règle
+  OctoPrint) ; boutons du widget avec `confirm: true` (pris en charge depuis la 5.1.0).
+- Lecture par cycle : projets, puis modèles des seuls projets qui contiennent un modèle autorisé
+  (tous tant qu'un modèle autorisé n'est pas localisé). 60 s par défaut, **5 s tant qu'une tâche
+  d'un modèle suivi tourne** (`busy()`, minuteur du conteneur, pas d'`onPoll`). `/data` :
+  dernière tâche et dernière tâche finie par modèle, `initialized`, `url`. Déclencheurs : une tâche
+  finie plus récente que celle connue (`success` ou `error`, jamais `stopped`) ; rien au premier
+  passage, rien pour un modèle tout juste autorisé.
+- « Lancer un modèle Semaphore » attend au plus `waitMs` (90 s) **compté depuis le début de
+  l'action**, sous les 120 s du `timeout_seconds` ; la relecture qui suit n'est pas attendue.
+- Budget du widget : liste de statuts + 5 boutons Lancer/Arrêter (clés `run_<id>`/`stop_<id>`,
+  l'identifiant aussi en `params`, les deux doivent concorder) + Actualiser + un texte d'erreur.
+  Le libellé d'un bouton est tronqué à **24 caractères** par le cœur.
+- `validateWidgetContent` du SDK renvoie un **tableau** de problèmes (pas `{ errors }`) : tester
+  `assert.deepEqual(validateWidgetContent(content), [])`.
 
 ## Store
 

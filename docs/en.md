@@ -1,61 +1,156 @@
-# Demo Devices Template
+# Semaphore UI
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+[Semaphore UI](https://semaphoreui.com/) is an open-source web interface to
+run Ansible playbooks, Terraform/OpenTofu code, and shell or Python scripts:
+each "template" is a job you start with a click and whose result you follow.
+This integration brings the templates **you allow** into Gladys: each one
+becomes a device with the status of its last task, a scene can **run a
+template** (and wait for its end) or **stop** its running task, scenes can
+react when a task **succeeds** or **fails**, and a dashboard widget shows their
+last status with a **Run** button.
 
-## What you get
+Tested against a real Semaphore UI 2.19 (Docker, SQLite, Ansible playbooks);
+not against a real Gladys instance yet: feedback welcome on
+[the issues](https://github.com/guim31/gladys-semaphore/issues).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## What you need
 
-## Configuration
+- Gladys Assistant 5.1.0 or later.
+- Semaphore UI 2.x, reachable from the Gladys machine.
+- An API token of a Semaphore user who may run the templates (role "Task
+  Runner" or more in their project).
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+Running a template runs code on your machines. That is why nothing can be run
+from Gladys until you type its number in the allowed list, and why the
+integration never reads the output of the tasks (Ansible logs may hold
+secrets): only their status and their duration.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+At each refresh (one minute by default) the integration reads the list of
+projects, then the templates of the projects that hold an allowed template;
+every 5 seconds while a task of an allowed template runs. Semaphore sets no
+rate limit on its API.
 
-## Actions
+## Getting started
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+### 1. Create an API token
 
-## Scenes
+In Semaphore, open the user menu (bottom left) → **API tokens** and create a
+token. On a version without this screen, the API creates one:
+`POST /api/user/tokens` while logged in. The token acts with the rights of its
+user: a dedicated user, member of the projects concerned only, limits what
+Gladys can do.
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+### 2. Configure the integration
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+In Gladys, **Integrations → Semaphore UI → Configuration**:
+
+- **Semaphore address**: the address you open Semaphore with, e.g.
+  `http://192.168.1.2:3000` (port 3000 is added to a bare IP address).
+- **API token**: the token of step 1.
+- **Language of the names**: French by default; it sets the feature names when
+  a device is added, the statuses and the scene results.
+
+Save, then click **Test the connection**: it lists every template the token
+sees, with its number, its project and its name, e.g.
+`#3 Home lab: Update servers`.
+
+### 3. Allow templates
+
+Type the numbers of the templates Gladys may follow and run in **Allowed
+templates (numbers)**, separated by commas: `3, 7`. The number is also in the
+address of a template in Semaphore (`…/project/1/templates/3`). Empty: nothing
+is followed, nothing can be run.
+
+### 4. Add the devices
+
+In the **Discover** tab, add the templates you want as devices. The triggers,
+the actions and the widget work for every allowed template; the devices bring
+the states and the history.
+
+## The devices
+
+One device per allowed template, named after it:
+
+| Feature             | Meaning                                                                   |
+| ------------------- | ------------------------------------------------------------------------- |
+| Last task           | status of the last task: Succeeded, Failed, Running, Stopped, Waiting…    |
+| Last task succeeded | 1 when the last finished task succeeded, 0 when it failed or was stopped  |
+| Running             | 1 while a task of the template runs                                       |
+| Last run            | when the last task started (day/month hours:minutes, time zone of Gladys) |
+| Last task duration  | duration of the last finished task, in seconds                            |
+
+There is no command on the device: running Ansible is not a switch a voice
+assistant or a misplaced tap should reach. A template is run from a scene or
+from the widget, which asks for a confirmation.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+The **Semaphore templates** widget lists the allowed templates (or the ones
+chosen in its settings), the failing ones first, then the running ones: last
+status, when it started, how long it took. Under the list, one button per
+template (the first five): **Run**, or **Stop** while a task runs. Gladys asks
+for a confirmation before sending it. **Refresh** reads Semaphore again.
+
+## Scenes
+
+### Triggers
+
+- **A Semaphore task succeeds**: a task of an allowed template ends
+  successfully.
+- **A Semaphore task fails**: a task of an allowed template ends in error.
+
+Both can be limited to some templates, and give the template name, the
+project, the task number and the duration in seconds. A stopped task is
+neither. Tasks started from Semaphore itself, a schedule or another tool count
+too. The first reading after the installation announces nothing from the past;
+a task that ended while Gladys or the integration restarted is announced once.
+
+### Actions
+
+- **Run a Semaphore template**: runs an allowed template. **Extra variables
+  (JSON)** is optional: a JSON object passed to the task, e.g.
+  `{"target": "web1"}` (scene values can be inserted).
+  With **Wait for the end (90 s at most)**, the scene waits for the task and
+  the next actions get its result. Outputs: task number, finished, succeeded,
+  status, duration (s).
+- **Stop a Semaphore task**: stops the running task of an allowed template.
+  Outputs: a task was stopped (yes/no), task number.
+
+Both refuse a template that is not in the allowed list, even if its device
+still exists in Gladys.
+
+### Scene ideas
+
+- Every Sunday at 3 am, run "Update servers"; when **A Semaphore task fails**,
+  send a Telegram message: "{{triggerEvent.data.template}} failed after
+  {{triggerEvent.data.duration}} s".
+- When you leave home, run "Nightly backup" with **Wait for the end**, then
+  notify you only if "Succeeded" is false.
+- A button on the wall tablet: the widget, with "Restart the media server"
+  allowed.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **API token refused**: the token was deleted or mistyped; create a new one.
+- **Refused by Semaphore: this user may not run tasks in the project**: give
+  the user of the token the "Task Runner" role (or more) in the project.
+- **Allowed but not found**: the number is wrong, the template was deleted, or
+  the user of the token is not a member of its project. **Test the
+  connection** lists what the token sees.
+- **No Semaphore API at this address**: check the address and the port;
+  behind a reverse proxy, include its path.
+- **The address redirects**: type the `https://` address.
+- A task does not show up at once: the integration reads Semaphore every minute
+  (configurable), every 5 seconds while a task runs.
+
+## Limits
+
+- Only the last task of each template is read: when two tasks of the same
+  template both end between two readings, only the last one fires a trigger.
+- The output of the tasks is never read nor shown, by design.
+- "Wait for the end" waits 90 s at most (the limit of a scene action in
+  Gladys); a longer task goes on, and the triggers report its end.
+- Terraform tasks waiting for a confirmation show "To confirm"; confirming is
+  done in Semaphore.
+- Developed and tested against Semaphore UI 2.19.17; older 2.x versions should
+  work (same API), untested.
