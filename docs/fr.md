@@ -91,7 +91,7 @@ lance depuis une scène ou depuis le widget, qui demande une confirmation.
 
 Le widget **Modèles Semaphore** liste les modèles autorisés (ou ceux choisis
 dans ses réglages), ceux en échec d'abord, puis ceux en cours : dernier statut,
-heure de début, durée. Sous la liste, un bouton par modèle (les cinq premiers) :
+heure de début, durée. Sous la liste, un bouton par modèle (les trois premiers) :
 **Lancer**, ou **Arrêter** pendant qu'une tâche tourne. Gladys demande une
 confirmation avant de l'envoyer. **Actualiser** relit Semaphore.
 

@@ -168,7 +168,7 @@ test('every message table of the code has the four languages', () => {
   assert.deepEqual(sorted(Object.keys(ERROR_TEXT)), sorted(Object.values(ERROR_KINDS)));
   assert.deepEqual(
     sorted(Object.keys(STATUS_TEXT)),
-    sorted([...RUNNING_STATUSES, ...FINISHED_STATUSES, 'never']),
+    sorted([...RUNNING_STATUSES, ...FINISHED_STATUSES, 'unknown', 'never']),
   );
 });
 

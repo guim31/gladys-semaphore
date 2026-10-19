@@ -232,14 +232,40 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   d'un modèle suivi tourne** (`busy()`, minuteur du conteneur, pas d'`onPoll`). `/data` :
   dernière tâche et dernière tâche finie par modèle, `initialized`, `url`. Déclencheurs : une tâche
   finie plus récente que celle connue (`success` ou `error`, jamais `stopped`) ; rien au premier
-  passage, rien pour un modèle tout juste autorisé.
+  passage, rien pour un modèle tout juste autorisé. Une tâche vue en cours puis remplacée par une
+  autre est relue une fois (`GET …/tasks/<t>`) pour annoncer sa fin ; des numéros de tâche qui
+  reculent (base de Semaphore réinitialisée) deviennent la nouvelle référence sans événement. Un
+  statut inconnu (version plus récente) n'est ni « en cours » ni « fini ».
 - « Lancer un modèle Semaphore » attend au plus `waitMs` (90 s) **compté depuis le début de
   l'action**, sous les 120 s du `timeout_seconds` ; la relecture qui suit n'est pas attendue.
-- Budget du widget : liste de statuts + 5 boutons Lancer/Arrêter (clés `run_<id>`/`stop_<id>`,
+- Budget du widget : le cœur garde **4 boutons au plus** (`WIDGET_CONTENT_BUDGET.buttons` du SDK, en
+  plus des 8 composants) : liste de statuts + 3 boutons Lancer/Arrêter (clés `run_<id>`/`stop_<id>`,
   l'identifiant aussi en `params`, les deux doivent concorder) + Actualiser + un texte d'erreur.
   Le libellé d'un bouton est tronqué à **24 caractères** par le cœur.
 - `validateWidgetContent` du SDK renvoie un **tableau** de problèmes (pas `{ errors }`) : tester
   `assert.deepEqual(validateWidgetContent(content), [])`.
+
+## Vérifié sur un vrai Semaphore
+
+Le 19/10/2026, image Docker de l'intégration lancée avec les contraintes du bac à sable de Gladys
+(`--cap-drop ALL --security-opt no-new-privileges --read-only --memory 256m --pids-limit 256`, volume
+`/data`, réseau en pont) contre `semaphoreui/semaphore` **2.19.17** (SQLite) : projet, clé `none`,
+dépôt local de playbooks, inventaire `localhost`, trois modèles (un qui réussit, un qui échoue, un
+long de 300 s), jeton d'API créé par l'API.
+
+- **Sans Gladys** : reconnexion du SDK en backoff, pas de plantage, aucun secret dans les logs,
+  ~19 Mo au repos.
+- **Intégration complète** (faux Gladys du SDK, noms en français, `TZ=Europe/Paris`) : découverte des
+  trois modèles autorisés (un numéro introuvable et un incompris signalés), états, badge `local`,
+  « Tester la connexion », « Lancer un modèle Semaphore » avec variables et attente (réussite en
+  10 s, échec en 6 s), sans attente puis « Arrêter une tâche Semaphore » (tâche `stopped`, aucun
+  déclencheur), déclencheurs réussite/échec une fois chacun, rien de plus au redémarrage sur le
+  même `/data`, modèle hors liste refusé, variables invalides refusées, widget validé
+  (`validateWidgetContent`) et son bouton Lancer, mauvais jeton, mauvais port. Ni le jeton ni les
+  variables dans les logs. ~88 Mo RSS pendant le test.
+- Non vérifié : une instance Gladys réelle (rendu du widget et de sa confirmation, éditeur de
+  scènes), Semaphore derrière un proxy avec sous-chemin, les tâches Terraform à confirmer, les
+  versions 2.x antérieures, l'écran « API tokens » de l'interface (jeton créé par l'API).
 
 ## Store
 

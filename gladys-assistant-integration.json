@@ -523,7 +523,7 @@
         "de": "Stoppt die laufende Aufgabe einer erlaubten Vorlage, falls es eine gibt.",
         "es": "Detiene la tarea en curso de una plantilla permitida, si la hay."
       },
-      "timeout_seconds": 30,
+      "timeout_seconds": 60,
       "fields": [
         {
           "key": "device",

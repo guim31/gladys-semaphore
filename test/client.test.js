@@ -63,7 +63,7 @@ test('a task keeps its status and dates, never its variables', async () => {
   assert.equal(normalizeTask({ id: 'x' }), null);
   assert.equal(
     normalizeTask({ id: 1, template_id: 1, project_id: 1, status: '??' }).status,
-    'waiting',
+    'unknown',
   );
   // A last task of another template is not taken.
   assert.equal(

@@ -251,3 +251,16 @@ test('the widget follows its settings, and says what to do without an allow-list
   assert.equal(down.data.content.components[0].text, 'Semaphore does not answer');
   assert.deepEqual(validateWidgetContent(down.data.content), []);
 });
+
+test('the widget keeps within the four buttons the core shows', async (t) => {
+  const semaphore = sampleSemaphore();
+  semaphore.addTemplate(5, 2, 'Fifth');
+  const world = await createWorld({ semaphore, config: { ...CONFIG, templates: '1,2,3,4,5' } });
+  t.after(() => world.app.stop());
+  const ack = await world.fake.widgetGet(WIDGET_KEY, { settings: {}, language: 'en' });
+  const { content } = ack.data;
+  assert.deepEqual(validateWidgetContent(content), []);
+  const buttons = content.components.filter((c) => c.type === 'button');
+  assert.equal(buttons.length, 4);
+  assert.equal(buttons.at(-1).action.key, 'refresh');
+});

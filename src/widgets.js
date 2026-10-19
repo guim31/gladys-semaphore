@@ -14,7 +14,8 @@
 // bound to device features: the widget works before the devices are added.
 //
 // Budget (8 components, 2 texts): one text when Semaphore does not answer,
-// one status list, five run/stop buttons at most, a Refresh button.
+// one status list, three run/stop buttons, a Refresh button (the core
+// keeps four buttons at most).
 // -----------------------------------------------------------------------------
 
 import { WIDGET_COLORS } from '@gladysassistant/integration-sdk';
@@ -32,7 +33,8 @@ import {
 export const ACTIONS = Object.freeze({ REFRESH: 'refresh', RUN: 'run', STOP: 'stop' });
 
 export const MAX_ROWS = 10;
-export const MAX_BUTTONS = 5;
+// The core keeps 4 buttons per widget: three templates and Refresh.
+export const MAX_BUTTONS = 3;
 
 export const TEXT = {
   empty: {
@@ -145,7 +147,7 @@ async function get(hub, { settings, language = 'en' }) {
     components.push({ type: 'status', items });
   }
 
-  // One button per template (the first five of the list): Stop while a task
+  // One button per template (the first three of the list): Stop while a task
   // runs, Run otherwise. The template id travels in the params; the key is
   // unique (the core drops a button whose key is taken).
   if (!hub.error) {

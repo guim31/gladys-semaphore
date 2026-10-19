@@ -93,7 +93,7 @@ wird aus einer Szene oder aus dem Widget gestartet, das um Bestätigung bittet.
 Das Widget **Semaphore-Vorlagen** listet die erlaubten Vorlagen (oder die in
 seinen Einstellungen gewählten), zuerst die fehlgeschlagenen, dann die
 laufenden: letzter Status, Startzeit, Dauer. Unter der Liste eine Schaltfläche
-pro Vorlage (die ersten fünf): **Starten**, oder **Stoppen**, solange eine
+pro Vorlage (die ersten drei): **Starten**, oder **Stoppen**, solange eine
 Aufgabe läuft. Gladys bittet vor dem Senden um Bestätigung. **Aktualisieren**
 liest Semaphore neu.
 

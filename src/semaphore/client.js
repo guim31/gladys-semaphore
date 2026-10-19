@@ -137,8 +137,10 @@ export function normalizeTask(raw) {
   if (!id || !templateId || !projectId) {
     return null;
   }
+  // A status this version does not know (a newer Semaphore) is neither
+  // running nor finished: no fast polling nor waiting forever on it.
   const status =
-    RUNNING_STATUSES.has(raw.status) || FINISHED_STATUSES.has(raw.status) ? raw.status : 'waiting';
+    RUNNING_STATUSES.has(raw.status) || FINISHED_STATUSES.has(raw.status) ? raw.status : 'unknown';
   return {
     id,
     templateId,

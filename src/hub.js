@@ -159,6 +159,10 @@ export class SemaphoreHub {
     if (config.invalidTemplates.length > 0) {
       logger.warn(`Allowed templates: not understood: ${config.invalidTemplates.join(' ')}`);
     }
+    if (JSON.stringify(previous.allowed) !== JSON.stringify(config.allowed)) {
+      // A read under way was made for the previous list: read again after it.
+      await this.polling?.catch(() => {});
+    }
     const signature = JSON.stringify([config.url, config.token]);
     if (signature !== this.signature) {
       this.signature = signature;
@@ -198,6 +202,9 @@ export class SemaphoreHub {
 
   /** Whether a task of a followed template runs: the timer reads faster. */
   busy() {
+    if (this.error) {
+      return false; // Semaphore does not answer: no reason to insist
+    }
     return [...this.templates.values()].some((template) => isRunning(template.lastTask));
   }
 
@@ -315,6 +322,18 @@ export class SemaphoreHub {
         }
         found.push(...templates.filter((template) => allowed.has(template.id)));
       }
+      // A task seen running, replaced since by another one: its own end
+      // (a run that ended while the next one started) is read once.
+      for (const template of found) {
+        const seen = this.saved.templates[template.id]?.last;
+        if (seen && !FINISHED_STATUSES.has(seen.status) && template.lastTask?.id !== seen.id) {
+          try {
+            template.previousTask = await client.task(template.projectId, seen.id);
+          } catch (err) {
+            logger.debug(`Task ${seen.id} unreadable: ${err.message}`);
+          }
+        }
+      }
     }
     return { projects, found };
   }
@@ -341,21 +360,35 @@ export class SemaphoreHub {
     let dirty = false;
     const events = [];
     const next = new Map();
-    for (const template of found) {
+    const allowed = new Set(this.config.allowed);
+    for (const { previousTask, ...template } of found) {
+      if (!allowed.has(template.id)) {
+        continue; // removed from the list while this read was under way
+      }
       const previous = this.templates.get(template.id);
       const known = template.id in this.saved.templates;
       const saved = this.saved.templates[template.id] ?? { last: null, finished: null };
       const last = template.lastTask;
       let finished = saved.finished;
-      if (last && FINISHED_STATUSES.has(last.status) && last.id !== finished?.id) {
-        // Only a task newer than the one kept (a restart of Semaphore with
-        // another database is not an event).
-        if (!finished || last.id > finished.id) {
-          if (known && this.saved.initialized) {
-            events.push({ template, task: last });
-          }
-          finished = summary(last);
+      for (const task of [previousTask, last]) {
+        if (!task || !FINISHED_STATUSES.has(task.status)) {
+          continue;
         }
+        if (task.id === finished?.id && task.created === finished.created) {
+          continue; // the one already known
+        }
+        if (finished && task.id <= finished.id) {
+          // Task numbers went back: Semaphore restarted on a new database.
+          // The task becomes the reference, without an event.
+          if (task === last) {
+            finished = summary(task);
+          }
+          continue;
+        }
+        if (known && this.saved.initialized) {
+          events.push({ template, task });
+        }
+        finished = summary(task);
       }
       const entry = { last: summary(last), finished };
       if (!known || JSON.stringify(entry) !== JSON.stringify(saved)) {
@@ -389,8 +422,9 @@ export class SemaphoreHub {
       dirty = true;
     }
     // Written only when something changed: no wear of the SD card at every read.
+    // Saved before the events: a crash in between never announces one twice.
     if (dirty) {
-      this.store.save(this.saved);
+      await this.store.save(this.saved);
     }
     await this.publishStates();
     for (const event of events) {
@@ -620,6 +654,12 @@ export class SemaphoreHub {
     return err;
   }
 
+  assertAllowed(template, language = this.config.language) {
+    if (!this.config.allowed.includes(template.id)) {
+      throw new Error(pick(ACTION_TEXT.notAllowed, language));
+    }
+  }
+
   /**
    * The followed template of a template id or a device external id — the
    * guard of every command: a template outside the allow-list is refused,
@@ -651,6 +691,9 @@ export class SemaphoreHub {
    * @returns {Promise<object>} the task created
    */
   async run(template, variables = null, language = this.config.language) {
+    // Checked again right before the command: the list may have changed
+    // while the template was being read.
+    this.assertAllowed(template, language);
     let task;
     try {
       task = await this.client.run(template.projectId, template.id, variables);
@@ -681,11 +724,13 @@ export class SemaphoreHub {
    * @returns {Promise<object|null>} the task stopped, null when none ran
    */
   async stopTask(template, language = this.config.language) {
+    // A fresh read: the task may have been started outside Gladys a moment ago.
     await this.pollNow();
     const last = this.templates.get(template.id)?.lastTask;
     if (!isRunning(last)) {
       return null;
     }
+    this.assertAllowed(template, language);
     try {
       await this.client.stop(template.projectId, last.id);
     } catch (err) {

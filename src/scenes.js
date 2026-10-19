@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------------------
 
 import { durationOf, isRunning, statusOf } from './devices.js';
-import { ACTION_TEXT, STATUS_TEXT, pick } from './texts.js';
+import { ACTION_TEXT, ERROR_TEXT, STATUS_TEXT, pick } from './texts.js';
 
 /**
  * The extra variables typed in the scene: a JSON object (scene values already
@@ -63,11 +63,20 @@ export const SCENE_ACTIONS = {
     const language = hub.config.language;
     const template = await hub.templateOf(fields.device);
     const variables = variablesOf(fields.variables, language);
+    if (Date.now() >= deadline) {
+      // Semaphore was too slow to answer: better not run than run twice
+      // (the core would report a timeout, and the scene could be run again).
+      throw new Error(pick(ERROR_TEXT.timeout, language));
+    }
     let task = await hub.run(template, variables);
     if (fields.wait === true || fields.wait === 'true') {
       while (isRunning(task) && Date.now() + stepMs <= deadline) {
         await sleep(stepMs);
-        task = await hub.task(template, task.id);
+        try {
+          task = await hub.task(template, task.id);
+        } catch {
+          break; // the task goes on in Semaphore: "not finished" is the truth we know
+        }
       }
       if (!isRunning(task)) {
         // The states and the triggers follow at once, without holding the scene.

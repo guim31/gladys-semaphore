@@ -91,7 +91,7 @@ lanza desde una escena o desde el widget, que pide una confirmación.
 El widget **Plantillas de Semaphore** lista las plantillas permitidas (o las
 elegidas en sus ajustes), primero las fallidas y luego las que están en curso:
 último estado, hora de inicio, duración. Bajo la lista, un botón por plantilla
-(las cinco primeras): **Lanzar**, o **Detener** mientras una tarea está en
+(las tres primeras): **Lanzar**, o **Detener** mientras una tarea está en
 curso. Gladys pide una confirmación antes de enviarlo. **Actualizar** vuelve a
 leer Semaphore.
 

@@ -88,7 +88,7 @@ from the widget, which asks for a confirmation.
 The **Semaphore templates** widget lists the allowed templates (or the ones
 chosen in its settings), the failing ones first, then the running ones: last
 status, when it started, how long it took. Under the list, one button per
-template (the first five): **Run**, or **Stop** while a task runs. Gladys asks
+template (the first three): **Run**, or **Stop** while a task runs. Gladys asks
 for a confirmation before sending it. **Refresh** reads Semaphore again.
 
 ## Scenes

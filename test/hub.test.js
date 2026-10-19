@@ -286,3 +286,45 @@ test('adding a device publishes its states and refreshes the widget', async (t) 
   assert.ok(world.fake.widgetRefreshes.slice(before).includes(WIDGET_KEY));
   assert.equal(world.fake.transports.at(-1).transport, 'local');
 });
+
+test('a task replaced by the next one between two reads is still announced', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const first = world.semaphore.addTask('Update servers', { status: 'running' });
+  await world.hub.pollNow();
+  world.semaphore.finish(first, 'error');
+  world.semaphore.addTask('Update servers', { status: 'running' });
+  await world.hub.pollNow();
+  assert.deepEqual(
+    world.fake.sceneEvents.map((e) => [e.key, e.data.task_id]),
+    [[TRIGGERS.FAILED, first.id]],
+  );
+});
+
+test('task numbers going back (a new Semaphore database) become the reference', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  await createDevices(world);
+  world.semaphore.tasks.length = 0;
+  world.semaphore.nextTask = 1;
+  world.semaphore.addTask('Update servers', { status: 'error', durationMs: 2000 });
+  await world.hub.pollNow();
+  assert.equal(world.fake.sceneEvents.length, 0, 'no event for the reset');
+  assert.equal(world.fake.lastState(idsOf(world, 'Update servers').feature('succeeded')), 0);
+  world.semaphore.addTask('Update servers', { status: 'success' });
+  await world.hub.pollNow();
+  assert.deepEqual(
+    world.fake.sceneEvents.map((e) => e.key),
+    [TRIGGERS.SUCCEEDED],
+  );
+});
+
+test('an unknown status is neither running nor finished', async (t) => {
+  const world = await createWorld();
+  t.after(() => world.app.stop());
+  const task = world.semaphore.addTask('Update servers', { status: 'running' });
+  task.status = 'some_future_status';
+  await world.hub.pollNow();
+  assert.equal(world.hub.busy(), false);
+  assert.equal(world.fake.sceneEvents.length, 0);
+});

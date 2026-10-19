@@ -116,6 +116,7 @@ export const STATUS_TEXT = {
   error: { en: 'Failed', fr: 'En échec', de: 'Fehlgeschlagen', es: 'Fallido' },
   stopped: { en: 'Stopped', fr: 'Arrêté', de: 'Gestoppt', es: 'Detenido' },
   rejected: { en: 'Rejected', fr: 'Rejeté', de: 'Abgelehnt', es: 'Rechazado' },
+  unknown: { en: 'Unknown', fr: 'Inconnu', de: 'Unbekannt', es: 'Desconocido' },
   never: { en: 'Never run', fr: 'Jamais lancé', de: 'Nie gestartet', es: 'Nunca ejecutado' },
 };
 
