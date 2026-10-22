@@ -1,6 +1,6 @@
 {
   "name": "gladys-semaphore",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Semaphore UI templates (Ansible, Terraform…) in Gladys Assistant: run them from a scene, follow their result.",
   "type": "module",

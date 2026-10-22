@@ -8,8 +8,8 @@
     "de": "Starte deine Semaphore-UI-Vorlagen (Ansible…) aus Gladys-Szenen und verfolge ihr Ergebnis.",
     "es": "Lance sus plantillas de Semaphore UI (Ansible…) desde escenas de Gladys y siga su resultado."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/guim31/gladys-semaphore:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/guim31/gladys-semaphore:1.0.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-semaphore/main/cover.png",
   "categories": ["services"],
